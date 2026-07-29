@@ -11,7 +11,6 @@ export default {
         const health = body.health || 100;
         const recommendation = body.recommendation || "";
 
-        // Safe check to verify Cloudflare Workers AI binding is mounted
         if (!env.AI) {
           return new Response(JSON.stringify({ error: "AI binding missing in wrangler.toml" }), { status: 500 });
         }
@@ -38,7 +37,7 @@ export default {
       }
     }
 
-    // 2. FIXED STATIC ASSET ROUTER: Fetch static assets directly from the global env object mapping
+    // 2. Fetch static files directly via global asset mapping
     return env.ASSETS.fetch(request);
   },
 };
