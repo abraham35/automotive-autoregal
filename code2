@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>AutoRegal — Luxury Auto Service Intelligence</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -207,7 +207,7 @@
 
 <script>
 // =====================================================
-// AUTO REGAL SaaS — COMPLETE STATE & DATA LAYER
+// AUTO REGAL SaaS — COMPLETE STATE & DATA LAYER (COMBINED)
 // =====================================================
 
 const S = {
@@ -287,7 +287,7 @@ const tid = () => S.currentTenantId;
 const shop = () => S.shops.find(s=>s.id===tid()) || S.shops[0];
 const cfg = () => S.shopConfigs[tid()] || S.shopConfigs['SHOP-01'];
 const filter = arr => arr.filter(i=>i.tid===tid());
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
 function tierAccess(req) {
   const t = shop().tier;
@@ -315,6 +315,7 @@ function money(n) { return '$' + n.toLocaleString('en-US',{minimumFractionDigits
 
 function toast(msg, type='success') {
   const c = $('toast-container');
+  if(!c) return;
   const d = document.createElement('div');
   d.className = `toast toast-${type}`;
   const icons = { success:'check-circle', error:'alert-circle', info:'info' };
@@ -362,11 +363,11 @@ function renderSidebar() {
   let html = `<nav class="sidebar"><div class="sidebar-brand"><h1 class="font-display">AutoRegal</h1><p>Intelligence Suite</p></div><div class="sidebar-nav">`;
   for(const item of NAV) {
     if(item.section) { html += `<div class="nav-section">${item.section}</div>`; continue; }
-    const active = S.activeView===item.id ? ' active':'';
+    const active = S.activeView===item.id ? ' active':''; 
     const locked = item.req && !tierAccess(item.req);
-    html += `<div class="nav-item${active}" data-nav="${item.id}" style="${locked?'opacity:.45':''}">
+    html += `<div class="nav-item${active}" data-nav="${item.id}" data-req="${item.req||''}" style="${locked?'opacity:.45;':''}">
       <i data-lucide="${item.icon}"></i><span>${item.label}</span>
-      ${item.id==='WorkOrders' ? `<span class="nav-badge">${filter(S.workOrders).filter(w=>w.status!=='Completed').length}</span>` : ''}
+      ${item.id==='WorkOrders' ? `<span class="nav-badge">${filter(S.workOrders).filter(w=>w.status!=='Completed').length}</span>` : ''} 
       ${item.id==='Invoices' ? `<span class="nav-badge">${filter(S.invoices).filter(i=>i.status==='Unpaid').length}</span>` : ''}
     </div>`;
   }
@@ -432,7 +433,7 @@ function renderDashboard() {
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
     <div class="card card-glow"><h3 style="font-size:15px;font-weight:600;margin-bottom:14px">Upcoming Appointments</h3>
       ${filter(S.appointments).map(a=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(38,38,50,.5)">
-        <div style="width:44px;height:44px;border-radius:10px;background:var(--bg-0);display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:14px;font-weight:700;color:var(--gold);line-height:1">${a.date.split('-')[2]}</span><span style="font-size:9px;color:var(--tx-2)">${a.date.split('-')[1]}</span></div>
+        <div style="width:44px;height:44px;border-radius:10px;background:var(--bg-0);display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:14px;font-weight:700;color:var(--gold);line-height:1">${a.date.split('-')[2]||''}</span><span style="font-size:9px;color:var(--tx-2)">${a.date.split('-')[1]||''}</span></div>
         <div style="flex:1"><div style="font-size:13px;font-weight:500">${a.client}</div><div style="font-size:11px;color:var(--tx-2)">${a.time} — ${a.vehicle}</div></div>
         ${statusBadge(a.status)}
       </div>`).join('')}
@@ -523,6 +524,7 @@ function renderAiExplanation() {
   const inv = S.invoices.find(i=>i.id===S.explainedInvId);
   if(!inv) return '';
   const rate = cfg().hourlyRate||185;
+  // NOTE: aiExplanation contains some markup intentionally; ensure it's internal/trusted or sanitize if from external sources.
   return `<div class="ai-output-card" style="margin-top:20px">
     <div class="ai-section-title"><i data-lucide="sparkles" style="width:14px;height:14px"></i> AI Invoice Explanation — ${inv.id}</div>
     <p style="font-size:13px;color:var(--tx-1);line-height:1.7">${S.aiExplanation || `This invoice for <strong style="color:var(--tx-0)">${inv.client}</strong> covers service performed on their <strong style="color:var(--tx-0)">${inv.vehicle}</strong>. Parts totaling <strong style="color:var(--gold)">${money(inv.parts)}</strong> were sourced and installed. Labor comprised <strong style="color:var(--gold)">${inv.labor} hours</strong> at the facility rate of ${money(rate)}/hr, amounting to <strong style="color:var(--gold)">${money(inv.labor*rate)}</strong>. The grand total of <strong style="color:var(--tx-0)">${money(inv.parts+inv.labor*rate)}</strong> is currently ${inv.status==='Paid'?'settled':'pending payment'}. All parts carry a 12-month warranty. Payment terms are Net-30 from date of service completion.`}</p>
@@ -833,6 +835,7 @@ const viewRenderers = {
 function render() {
   const app = $('app');
   app.innerHTML = renderSidebar() + `<div class="main-wrap">${renderTopbar()}<main class="main-content" id="main-content">${(viewRenderers[S.activeView]||renderDashboard)()}</main></div>`;
+  // Render icons
   lucide.createIcons();
   bindEvents();
   // Scroll chat to bottom
@@ -844,14 +847,7 @@ function render() {
 // EVENT BINDING
 // =====================================================
 function bindEvents() {
-  // Sidebar nav
-  document.querySelectorAll('.nav-item[data-nav]').forEach(el => {
-    el.addEventListener('click', () => {
-      S.activeView = el.dataset.nav;
-      S.showAddForm = null;
-      render();
-    });
-  });
+  // Sidebar nav - keyboard and access enforced in finalizeBindings
   // Tenant switcher
   const ts = $('tenant-switch');
   if(ts) ts.addEventListener('click', () => {
@@ -868,10 +864,10 @@ function bindEvents() {
   if(narIn) narIn.addEventListener('input', e => { S.narrativeInput = e.target.value; });
   // OEM query sync
   const oemIn = $('oem-query');
-  if(oemIn) oemIn.addEventListener('keydown', e => { if(e.key==='Enter') runOEMSearch(); S.oemQuery = e.target.value; });
+  if(oemIn) oemIn.addEventListener('keydown', e => { if(e.key==='Enter') runOEMSearch(); oemIn && (S.oemQuery = oemIn.value); });
   // Part SKU sync
-  const skuIn = $('part-sku');
-  if(skuIn) skuIn.addEventListener('keydown', e => { if(e.key==='Enter') runSupplierSearch(); S.partSku = e.target.value; });
+  const skuIn = $('part-sku') || $('part-sku');
+  if(skuIn) skuIn.addEventListener('keydown', e => { if(e.key==='Enter') runSupplierSearch(); S.partSku = skuIn.value; });
   // Voice transcript sync
   const vtIn = $('voice-transcript');
   if(vtIn) vtIn.addEventListener('input', e => { S.voiceText = e.target.value; });
@@ -882,18 +878,46 @@ function bindEvents() {
     if(q.length<2) return;
     // Search across current tenant data
     const results = [];
-    filter(S.customers).forEach(c => { if(c.name.toLowerCase().includes(q)||c.vehicle.toLowerCase().includes(q)) results.push({type:'Client',name:c.name}); });
-    filter(S.workOrders).forEach(w => { if(w.client.toLowerCase().includes(q)||w.vehicle.toLowerCase().includes(q)) results.push({type:'Work Order',name:`${w.client} — ${w.id}`}); });
+    filter(S.customers).forEach(c => { if((c.name||'').toLowerCase().includes(q)|| (c.vehicle||'').toLowerCase().includes(q)) results.push({type:'Client',name:c.name}); });
+    filter(S.workOrders).forEach(w => { if((w.client||'').toLowerCase().includes(q)|| (w.vehicle||'').toLowerCase().includes(q)) results.push({type:'Work Order',name:`${w.client} — ${w.id}`}); });
     if(results.length>0) toast(`Found ${results.length} match${results.length>1?'es':''} for "${e.target.value}"`, 'info');
+  });
+
+  // Finalize nav/key bindings & access checks
+  finalizeBindings();
+}
+
+// Accessibility + nav access enforcement
+function finalizeBindings() {
+  document.querySelectorAll('.nav-item[data-nav]').forEach(el => {
+    // set keyboard and ARIA
+    el.setAttribute('tabindex','0');
+    el.setAttribute('role','button');
+    el.addEventListener('keydown', e => { if(e.key==='Enter' || e.key===' ') { e.preventDefault(); el.click(); } });
+    // click handler with access check
+    el.addEventListener('click', (ev) => {
+      const id = el.dataset.nav;
+      const req = el.dataset.req || '';
+      if(req && req.length && !tierAccess(req)) {
+        toast(`${el.querySelector('span')?.textContent || id} requires ${req} subscription`, 'info');
+        return;
+      }
+      S.activeView = id;
+      S.showAddForm = null;
+      render();
+    });
   });
 }
 
 // =====================================================
 // ACTION METHODS
 // =====================================================
+
+// Toggle add forms
 function toggleForm(which) { S.showAddForm = S.showAddForm===which ? null : which; render(); }
 
 function switchTenant(id) {
+  if(!S.shops.some(s=>s.id===id)) { toast('Tenant not found','error'); return; }
   S.currentTenantId = id;
   S.showAddForm = null;
   S.explainedInvId = null;
@@ -1257,9 +1281,15 @@ function actionTelemetry(id) {
 }
 
 // =====================================================
-// INIT
+// INIT & CLEANUP
 // =====================================================
+
+// Cleanup SpeechRecognition on unload to avoid leaks
+window.addEventListener('beforeunload', () => { if(window._speechRecognition) { try { window._speechRecognition.stop(); } catch(e){} window._speechRecognition = null; } });
+
+// Initial render (bootstrap)
 render();
+
 </script>
 </body>
 </html>
