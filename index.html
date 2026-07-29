@@ -1261,24 +1261,54 @@ function runAcousticAnalysis() {
     render();
   }, 2200);
 }
-
-function actionTelemetry(id) {
-  const t = S.telemetry.find(x=>x.id===id);
+async function actionTelemetry(id) {
+  const t = S.telemetry.find(item => item.id === id);
   if(!t) return;
-  t.actioned = true;
-  S.workOrders.push({
-    id:'WO-'+uid().slice(0,4).toUpperCase(),
-    tid:tid(),
-    client: t.owner,
-    vehicle: t.vehicle,
-    tech:'Unassigned',
-    status:'Pending',
-    notes: `Auto-generated from Predictive Telemetry alert. DTC: ${t.dtc.join(', ')}. AI Rec: ${t.rec}`,
-    logs:['Work order created from telemetry alert.']
-  });
-  toast(`Work order created from telemetry alert for ${t.owner}`);
+  
+  S.techLog = `[CONNECT] Connecting to GLM-4.7 Core Intelligence Link...\n[UPLINK] Uploading payload diagnostic logs for ${t.vehicle}...\n`;
+  render();
+
+  try {
+    const response = await fetch("/api/diagnose", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        vehicle: t.vehicle,
+        dtc: t.dtc,
+        health: t.health,
+        recommendation: t.rec
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.response) {
+      S.techLog += `[SUCCESS] Technical manual guidelines compiled by GLM Brain.\n\n===============================\nGLM-4.7 CORE INTELLIGENCE BRIEF:\n===============================\n${data.response}`;
+      toast("GLM-4.7 Telemetry computation complete.");
+      t.actioned = true;
+      
+      S.workOrders.push({ 
+        id:'WO-'+uid().slice(0,4).toUpperCase(), 
+        tid:tid(), 
+        client:t.owner, 
+        vehicle:t.vehicle, 
+        tech:"GLM-4.7 Core Allocation", 
+        status:"In Progress", 
+        notes:`GLM-4.7 Guideline Resolution: ${data.response.substring(0, 150)}...`,
+        logs:[] 
+      });
+    } else {
+      S.techLog += `[ERROR] GLM engine processing returned an invalid empty data block layout.`;
+      toast("GLM matrix empty block exception.", "error");
+    }
+  } catch (error) {
+    S.techLog += `[CRITICAL] Link timeout. Verify Workers AI model definitions inside wrangler.toml settings.`;
+    toast("Uplink failure connecting to GLM engine.", "error");
+  }
   render();
 }
+
+
 
 // =====================================================
 // INIT & CLEANUP
