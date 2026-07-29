@@ -1,7 +1,11 @@
-name = "automotive-autoregal"
+name = "automotive-autoregal-updated"
 main = "worker.js"
 compatibility_date = "2026-07-29"
 
 [assets]
 directory = "."
+
+[ai]
+binding = "AI"
+
 
