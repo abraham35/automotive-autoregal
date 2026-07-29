@@ -37,7 +37,7 @@ export default {
       }
     }
 
-    // 2. Fetch static files directly via global asset mapping
+    // 2. Fetch static files safely directly from the directory without code interference
     return env.ASSETS.fetch(request);
   },
 };
