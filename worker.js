@@ -2,17 +2,16 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // 1. FORCED ROOT ROUTER: Manually target and return index.html for root pathing
-    if (url.pathname === "/" || url.pathname === "") {
-      const rootRequest = new Request(new URL("/index.html", request.url), request);
-      return env.ASSETS.fetch(rootRequest);
-    }
-
-    // 2. Live Streaming AI Telematics API Endpoint
+    // 1. Live Streaming AI Telematics API Endpoint
     if (url.pathname === "/api/diagnose" && request.method === "POST") {
       try {
-        const { vehicle, dtc, health, recommendation } = await request.json();
+        const body = await request.json();
+        const vehicle = body.vehicle || "Unknown Asset";
+        const dtc = body.dtc || [];
+        const health = body.health || 100;
+        const recommendation = body.recommendation || "";
 
+        // Safe check to verify Cloudflare Workers AI binding is mounted
         if (!env.AI) {
           return new Response(JSON.stringify({ error: "AI binding missing in wrangler.toml" }), { status: 500 });
         }
@@ -39,7 +38,7 @@ export default {
       }
     }
 
-    // 3. Fallback Asset Routing Matcher
+    // 2. FIXED STATIC ASSET ROUTER: Fetch static assets directly from the global env object mapping
     return env.ASSETS.fetch(request);
   },
 };
