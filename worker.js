@@ -2,9 +2,10 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // 1. CRITICAL FIXED LOGIC: Route root requests directly to your static asset files
-    if (url.pathname === "/" || url.pathname === "/index.html") {
-      return env.ASSETS.fetch(request);
+    // 1. FORCED ROOT ROUTER: Manually target and return index.html for root pathing
+    if (url.pathname === "/" || url.pathname === "") {
+      const rootRequest = new Request(new URL("/index.html", request.url), request);
+      return env.ASSETS.fetch(rootRequest);
     }
 
     // 2. Live Streaming AI Telematics API Endpoint
