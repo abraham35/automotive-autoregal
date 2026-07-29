@@ -1065,49 +1065,66 @@ function sendSMS() {
     render();
   }, 1200);
 }
-
-// ---- AI NARRATIVE ANALYSIS ----
-function runNarrativeAnalysis() {
+// =====================================================
+// LIVE GLM-4.7 ENGINE WIRING (STREAMING INTERACTIVE CORES)
+// =====================================================
+async function runNarrativeAnalysis() {
   const input = $('narrative-input');
   if(!input) return;
   S.narrativeInput = input.value.trim();
   if(!S.narrativeInput) { toast('Please enter a client narrative','error'); return; }
+  
   S.aiLoading = true;
+  S.aiOutput = { summary: "", tasks: [], components: [], hours: "...", directives: [] };
   render();
-  setTimeout(()=>{
-    // Generate contextual output based on keywords
-    const n = S.narrativeInput.toLowerCase();
-    let summary, tasks, components, hours, directives;
-    if(n.includes('brake') || n.includes('grinding') || n.includes('rotor')) {
-      summary = "Client reports metallic grinding noise from front braking system, potentially indicating worn brake pad backing plates contacting rotor surfaces. Pothole impact may have caused rotor warpage or pad displacement.";
-      tasks = ["Remove and inspect front brake pads for wear pattern asymmetry","Measure front rotor thickness variation with micrometer","Inspect caliper slide pins for binding or corrosion","Check ABS wheel speed sensor rings for damage","Perform on-vehicle brake lathe measurement"];
-      components = ["Front Brake Pad Set (L+R)","Front Brake Rotors (Potential Replacement)","Caliper Slide Pin Kit","ABS Sensor Ring (Inspection)"];
-      hours = 4.5;
-      directives = ["If rotor thickness variation exceeds 0.001\", replace both front rotors as a matched set","Inspect caliper piston boots for tears or fluid contamination","Bleed brake system with fresh DOT 4 fluid after any caliper service","Road test at varying speeds to confirm noise elimination","Document all measurements in digital inspection report for warranty"];
-    } else if(n.includes('battery') || n.includes('cooling') || n.includes('thermal') || n.includes('ev') || n.includes('taycan')) {
-      summary = "Client reports thermal management concerns with high-voltage battery system. Potential coolant valve actuator degradation or refrigerant charge deficiency in the thermal loop causing intermittent thermal warnings under sustained load.";
-      tasks = ["Validate battery coolant level and flow rate via PIWIS","Inspect thermal management valve actuator operation","Monitor high-voltage battery module temperatures under load test","Verify refrigerant charge level in HVAC/thermal coupling loop","Check coolant pump duty cycle at various operating points"];
-      components = ["Battery Thermal Valve Actuator (9Y0-121-XXX)","Coolant Temperature Sensor (Potential)","Refrigerant Charge (Verification)","Coolant Pump Assembly (Inspection)"];
-      hours = 3.5;
-      directives = ["Connect PIWIS diagnostic tool and monitor live thermal data stream for 15 minutes","Perform active coolant pump test at 80% duty cycle — compare flow rate to spec","If valve actuator shows intermittent response, replace unit and perform thermal system calibration","Road test minimum 15 miles at highway speeds with thermal monitoring active","Clear all DTCs and verify no return after 24-hour cold soak cycle"];
-    } else if(n.includes('suspension') || n.includes('air') || n.includes('ride') || n.includes('defender')) {
-      summary = "Client reports suspension irregularities consistent with air spring or valve block degradation. Pneumatic pressure drop detected under cornering loads suggests primary valve manifold seal failure or air line micro-fracture.";
-      tasks = ["Perform air suspension leak test using ultrasonic detection","Inspect valve block solenoid operation and seal integrity","Check air spring bellows for cracking or weathering","Monitor ride height sensor values through full articulation range","Test compressor run time and duty cycle under load"];
-      components = ["Air Suspension Valve Block Assembly","Air Spring Bellows (L/R — Inspection)","Ride Height Sensor Calibration","Compressor Relay (Potential)"];
-      hours = 5.0;
-      directives = ["Use Land Rover IID tool to monitor real-time suspension pressure at each corner","If valve block shows pressure drop >5% over 30-second hold test, replace valve block","Inspect all pneumatic line connections at the valve block for moisture contamination","After any component replacement, perform full ride height calibration sequence","Road test on varied surface conditions and verify auto-leveling response"];
-    } else {
-      summary = "Client concern has been analyzed. The described symptoms indicate a multi-system diagnostic requirement. Initial assessment suggests component-level inspection with potential for related subsystem involvement.";
-      tasks = ["Perform comprehensive OBD-II diagnostic scan with factory tool","Visual inspection of reported symptom area","Check for relevant technical service bulletins","Document baseline measurements for all related systems","Cross-reference symptoms with known model-specific issues"];
-      components = ["Diagnostic assessment required — components TBD after inspection","Related subsystem components pending initial findings"];
-      hours = 2.0;
-      directives = ["Begin with comprehensive fault code scan using factory diagnostic equipment","Photograph all findings for client documentation","Contact client with preliminary findings before proceeding with repairs","All replacement parts must meet or exceed OEM specifications","Update work order log with timestamped progress notes"];
+
+  try {
+    const response = await fetch("/api/diagnose", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        vehicle: "Narrative Analysis Request",
+        dtc: ["CLIENT-NARRATIVE-BRIEF"],
+        health: 100,
+        recommendation: `Analyze this customer complaint. Break it down dynamically into steps. Narrative: ${S.narrativeInput}`
+      })
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let accumulatedText = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split("\n");
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          try {
+            const dataObj = JSON.parse(line.slice(6));
+            if (dataObj.response) {
+              accumulatedText += dataObj.response;
+              S.aiOutput.summary = accumulatedText;
+              render();
+            }
+          } catch(e) {}
+        }
+      }
     }
-    S.aiOutput = { summary, tasks, components, hours, directives };
-    S.aiLoading = false;
-    S.techLog += `\n[${new Date().toLocaleTimeString()}] Narrative analysis complete — ${tasks.length} tasks generated, ${hours}h estimated`;
-    render();
-  }, 1800);
+
+    S.aiOutput.tasks = ["Review real-time dynamic brief generation trace above"];
+    S.aiOutput.components = ["Identified via real-time summary streaming text"];
+    S.aiOutput.directives = ["Follow the detailed steps outputted by GLM-4.7 above"];
+    S.aiOutput.hours = 3.0;
+    toast("Diagnostic brief compiled successfully by GLM");
+
+  } catch (error) {
+    toast("Uplink failure connecting to GLM engine.", "error");
+  }
+  S.aiLoading = false;
+  render();
 }
 
 function createWOFromAI() {
