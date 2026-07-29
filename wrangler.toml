@@ -1,1 +1,7 @@
+name = "automotive-autoregal"
+main = "index.html"
+compatibility_date = "2026-07-29"
+
+[assets]
+directory = "."
 
