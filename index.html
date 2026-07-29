@@ -842,20 +842,64 @@ function render() {
   const chatEl = $('chat-messages');
   if(chatEl) chatEl.scrollTop = chatEl.scrollHeight;
 }
-
-// =====================================================
-// EVENT BINDING
-// =====================================================
 function bindEvents() {
-  // Sidebar nav - keyboard and access enforced in finalizeBindings
+  // Sidebar nav
+  document.querySelectorAll('.nav-item[data-nav]').forEach(el => {
+    el.addEventListener('click', () => {
+      S.activeView = el.dataset.nav;
+      S.showAddForm = null;
+      render();
+    });
+  });
+
   // Tenant switcher
   const ts = $('tenant-switch');
   if(ts) ts.addEventListener('click', () => {
-    // Cycle to next tenant
     const idx = S.shops.findIndex(s=>s.id===tid());
     const next = S.shops[(idx+1) % S.shops.length];
     switchTenant(next.id);
   });
+
+  // OEM query stream binding
+  const oemIn = $('oem-query');
+  if(oemIn) {
+    oemIn.addEventListener('input', e => { S.oemQuery = e.target.value; });
+    oemIn.addEventListener('keydown', e => { 
+      if(e.key==='Enter') { 
+        e.preventDefault(); 
+        runOEMSearch(); 
+      } 
+    });
+  }
+
+  // Narrative input sync
+  const narIn = $('narrative-input');
+  if(narIn) narIn.addEventListener('input', e => { S.narrativeInput = e.target.value; });
+
+  // SMS enter key
+  const smsIn = $('sms-input');
+  if(smsIn) smsIn.addEventListener('keydown', e => { if(e.key==='Enter') sendSMS(); });
+
+  // Part SKU sync
+  const skuIn = $('part-sku');
+  if(skuIn) skuIn.addEventListener('keydown', e => { if(e.key==='Enter') runSupplierSearch(); S.partSku = e.target.value; });
+
+  // Voice transcript sync
+  const vtIn = $('voice-transcript');
+  if(vtIn) vtIn.addEventListener('input', e => { S.voiceText = e.target.value; });
+
+  // Global search
+  const gs = $('global-search');
+  if(gs) gs.addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    if(q.length<2) return;
+    const results = [];
+    filter(S.customers).forEach(c => { if(c.name.toLowerCase().includes(q)||c.vehicle.toLowerCase().includes(q)) results.push({type:'Client',name:c.name}); });
+    filter(S.workOrders).forEach(w => { if(w.client.toLowerCase().includes(q)||w.vehicle.toLowerCase().includes(q)) results.push({type:'Work Order',name:`${w.client} — ${w.id}`}); });
+    if(results.length>0) toast(`Found ${results.length} match${results.length>1?'es':''} for "${e.target.value}"`, 'info');
+  });
+}
+  
   // SMS enter key
   const smsIn = $('sms-input');
   if(smsIn) smsIn.addEventListener('keydown', e => { if(e.key==='Enter') sendSMS(); });
