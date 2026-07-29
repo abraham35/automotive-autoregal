@@ -1,5 +1,5 @@
 name = "automotive-autoregal"
-main = "index.html"
+main = "worker.js"
 compatibility_date = "2026-07-29"
 
 [assets]
