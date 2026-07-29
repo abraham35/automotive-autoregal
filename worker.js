@@ -2,16 +2,20 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // 1. Live Streaming AI Telematics API Endpoint
+    // 1. CRITICAL FIXED LOGIC: Route root requests directly to your static asset files
+    if (url.pathname === "/" || url.pathname === "/index.html") {
+      return env.ASSETS.fetch(request);
+    }
+
+    // 2. Live Streaming AI Telematics API Endpoint
     if (url.pathname === "/api/diagnose" && request.method === "POST") {
       try {
-        const { vehicle, dtc, health, recommendation } = await request.url ? await request.json() : {};
+        const { vehicle, dtc, health, recommendation } = await request.json();
 
         if (!env.AI) {
           return new Response(JSON.stringify({ error: "AI binding missing in wrangler.toml" }), { status: 500 });
         }
 
-        // Call the model with streaming activated
         const aiResponse = await env.AI.run("@cf/zai-org/glm-4.7-flash", {
           stream: true,
           messages: [
@@ -26,7 +30,6 @@ export default {
           ]
         });
 
-        // Pipe the raw Text/Event-Stream directly back to the user interface
         return new Response(aiResponse, {
           headers: { "Content-Type": "text/event-stream" }
         });
@@ -35,6 +38,7 @@ export default {
       }
     }
 
+    // 3. Fallback Asset Routing Matcher
     return env.ASSETS.fetch(request);
   },
 };
