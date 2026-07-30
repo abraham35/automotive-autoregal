@@ -2,7 +2,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // 1. Force root requests to pull index.html from the asset folder
+    // 1. FIXED ROOT ROUTER: Force root path to serve index.html from your assets
     if (url.pathname === "/" || url.pathname === "") {
       return env.ASSETS.fetch(new Request(new URL("/index.html", request.url), request));
     }
@@ -46,4 +46,3 @@ export default {
     return env.ASSETS.fetch(request);
   },
 };
-
