@@ -1,9 +1,9 @@
-name = "automotive-autoregal-glmai4"
+name = "automotive-autoregal-glmai8"
 main = "worker.js"
 compatibility_date = "2026-07-29"
 
 [assets]
-directory = "./public"
+directory = "."
 
 [ai]
 binding = "AI"
