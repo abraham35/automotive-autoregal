@@ -37,7 +37,7 @@ export default {
       }
     }
 
-    // 2. SAFE WEB ROUTER: Completely bypass JSON parsing for standard web visits
-    return env.ASSETS.fetch(request);
+    // 2. CRITICAL ASSET FIX: Pass control cleanly back to Cloudflare's static file handler asset link 
+    return env.ASSETS ? env.ASSETS.fetch(request) : fetch(request);
   },
 };
