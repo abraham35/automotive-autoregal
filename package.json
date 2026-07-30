@@ -1,0 +1,12 @@
+{
+  "name": "automotive-autoregal-glmai17",
+  "version": "1.0.0",
+  "description": "Automotive AI SaaS platform running on GLM-4.7",
+  "main": "worker.js",
+  "scripts": {
+    "build": "echo 'No build step required'"
+  },
+  "devDependencies": {
+    "wrangler": "^3.60.0"
+  }
+}
