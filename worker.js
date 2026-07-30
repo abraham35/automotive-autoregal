@@ -2,12 +2,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // 1. FIXED ROOT ROUTER: Force root path to serve index.html from your assets
-    if (url.pathname === "/" || url.pathname === "") {
-      return env.ASSETS.fetch(new Request(new URL("/index.html", request.url), request));
-    }
-
-    // 2. Live Streaming AI Telematics API Endpoint
+    // 1. Live Streaming AI Telematics API Endpoint
     if (url.pathname === "/api/diagnose" && request.method === "POST") {
       try {
         const body = await request.json();
@@ -42,7 +37,7 @@ export default {
       }
     }
 
-    // 3. Fallback Asset Routing Matcher
+    // 2. SAFE WEB ROUTER: Completely bypass JSON parsing for standard web visits
     return env.ASSETS.fetch(request);
   },
 };
