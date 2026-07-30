@@ -2,7 +2,12 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // 1. Live Streaming AI Telematics API Endpoint
+    // 1. Force root requests to pull index.html from the asset folder
+    if (url.pathname === "/" || url.pathname === "") {
+      return env.ASSETS.fetch(new Request(new URL("/index.html", request.url), request));
+    }
+
+    // 2. Live Streaming AI Telematics API Endpoint
     if (url.pathname === "/api/diagnose" && request.method === "POST") {
       try {
         const body = await request.json();
@@ -37,7 +42,8 @@ export default {
       }
     }
 
-    // 2. Fetch static files safely directly from the directory without code interference
+    // 3. Fallback Asset Routing Matcher
     return env.ASSETS.fetch(request);
   },
 };
+
